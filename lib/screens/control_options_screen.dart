@@ -5,23 +5,29 @@ class ControlOptionsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
+    return Padding(
       padding: const EdgeInsets.all(16.0),
-      children: [
-        ElevatedButton(
-          onPressed: () {
-            // Send data to car: Mode 1
-          },
-          child: const Text('Automatic Mode 1'),
-        ),
-        const SizedBox(height: 20),
-        ElevatedButton(
-          onPressed: () {
-            // Send data to car: Mode 2
-          },
-          child: const Text('Automatic Mode 2'),
-        ),
-      ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: () {
+              // send mode 1
+            },
+            icon: const Icon(Icons.flash_on),
+            label: const Text('Automatic Mode 1'),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () {
+              // send mode 2
+            },
+            icon: const Icon(Icons.flash_auto),
+            label: const Text('Automatic Mode 2'),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -11,7 +11,7 @@ class _ManualControlScreenState extends State<ManualControlScreen> {
   double _speed = 0;
 
   void _sendSpeedToCar() {
-    // Send _speed to car
+    // send _speed to car
   }
 
   @override
@@ -21,18 +21,30 @@ class _ManualControlScreenState extends State<ManualControlScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text('Speed: ${_speed.toStringAsFixed(0)}'),
+          const Text(
+            'Set Car Speed',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            '${_speed.toInt()} km/h',
+            style: const TextStyle(fontSize: 32, color: Colors.indigo),
+          ),
           Slider(
             value: _speed,
             min: 0,
             max: 100,
             divisions: 20,
-            label: _speed.toStringAsFixed(0),
-            onChanged: (val) => setState(() => _speed = val),
+            label: '${_speed.toInt()} km/h',
+            onChanged: (value) {
+              setState(() => _speed = value);
+            },
           ),
-          ElevatedButton(
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
             onPressed: _sendSpeedToCar,
-            child: const Text('Drive'),
+            icon: const Icon(Icons.send),
+            label: const Text('Drive'),
           ),
         ],
       ),

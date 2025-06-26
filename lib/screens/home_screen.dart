@@ -19,9 +19,17 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _screens = [
     const WifiScannerScreen(),
     const ControlOptionsScreen(),
-    ManualControlScreen(),
+    const ManualControlScreen(),
     const StatusViewScreen(),
     const SettingsScreen(),
+  ];
+
+  final List<String> _titles = [
+    'Wi-Fi Scanner',
+    'Control Options',
+    'Manual Control',
+    'Status View',
+    'Settings',
   ];
 
   void _onItemTapped(int index) {
@@ -31,10 +39,15 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_selectedIndex],
+      appBar: AppBar(title: Text(_titles[_selectedIndex]), centerTitle: true),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: _screens[_selectedIndex],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
+        type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.wifi), label: 'Scan'),
           BottomNavigationBarItem(icon: Icon(Icons.tune), label: 'Control'),
