@@ -1,61 +1,39 @@
-import 'package:auto_car/core/shared_prefs.dart';
 import 'package:flutter/material.dart';
 
+import '../core/shared_prefs.dart';
 import 'home_screen.dart';
 
-class IntroductionScreen extends StatelessWidget {
-  const IntroductionScreen({super.key});
+class IntroScreen extends StatelessWidget {
+  const IntroScreen({super.key});
 
-  void completeIntro(BuildContext context) async {
+  void _completeIntro(BuildContext context) async {
     await SharedPrefs.setIntroSeen();
-    Navigator.pushReplacement(
+    Navigator.of(
       context,
-      MaterialPageRoute(builder: (_) => HomeScreen()),
-    );
+    ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: PageView(
-        children: [
-          introPage(
-            "Welcome to Smart Car Controller",
-            "Control your car easily.",
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'Welcome to Smart Car Controller!',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 40),
+              ElevatedButton(
+                onPressed: () => _completeIntro(context),
+                child: const Text('Let\'s Start'),
+              ),
+            ],
           ),
-          introPage(
-            "Connect via WiFi",
-            "Make sure your car is ready to receive signals.",
-          ),
-          introPage("Manual & Auto Modes", "Choose how you want to drive."),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => completeIntro(context),
-        label: Text("Get Started"),
-        icon: Icon(Icons.arrow_forward),
-      ),
-    );
-  }
-
-  Widget introPage(String title, String subtitle) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              title,
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 20),
-            Text(
-              subtitle,
-              style: TextStyle(fontSize: 18),
-              textAlign: TextAlign.center,
-            ),
-          ],
         ),
       ),
     );

@@ -7,54 +7,57 @@ import 'status_view_screen.dart';
 import 'wifi_scanner_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  final Function(bool)? onThemeChanged;
-  final Function(String)? onLanguageChanged;
-
-  const HomeScreen({super.key, this.onThemeChanged, this.onLanguageChanged});
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
+  int _selectedIndex = 0;
+
   final List<Widget> _screens = [
-    ControlOptionsScreen(),
+    const WifiScannerScreen(),
+    const ControlOptionsScreen(),
     ManualControlScreen(),
-    StatusViewScreen(),
-    SettingsScreen(),
+    const StatusViewScreen(),
+    const SettingsScreen(),
   ];
 
-  void _onFabPressed() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => WifiScannerScreen()));
+  void _onItemTapped(int index) {
+    setState(() => _selectedIndex = index);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_currentIndex],
+      body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
         items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.wifi), label: 'Scan'),
+          BottomNavigationBarItem(icon: Icon(Icons.tune), label: 'Control'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Control',
+            icon: Icon(Icons.directions_car),
+            label: 'Manual',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.drive_eta), label: 'Manual'),
-          BottomNavigationBarItem(icon: Icon(Icons.wifi), label: 'Status'),
+          BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Status'),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: 'Settings',
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _onFabPressed,
-        child: Icon(Icons.wifi_tethering),
-      ),
+      floatingActionButton:
+          _selectedIndex == 0
+              ? FloatingActionButton(
+                onPressed: () {
+                  // connect to car wifi
+                },
+                child: const Icon(Icons.search),
+              )
+              : null,
     );
   }
 }

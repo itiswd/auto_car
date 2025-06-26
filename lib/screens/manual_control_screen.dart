@@ -1,39 +1,39 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
-class ManualControlScreen extends StatelessWidget {
-  final TextEditingController speedController = TextEditingController();
+class ManualControlScreen extends StatefulWidget {
+  const ManualControlScreen({super.key});
 
-  ManualControlScreen({super.key});
+  @override
+  State<ManualControlScreen> createState() => _ManualControlScreenState();
+}
 
-  Future<void> sendSpeed() async {
-    final speed = speedController.text;
-    final uri = Uri.parse('http://192.168.4.1/speed?value=$speed');
-    try {
-      final response = await http.get(uri);
-      if (response.statusCode == 200) {
-        print('Speed sent: $speed');
-      }
-    } catch (e) {
-      print('Failed to send speed: $e');
-    }
+class _ManualControlScreenState extends State<ManualControlScreen> {
+  double _speed = 0;
+
+  void _sendSpeedToCar() {
+    // Send _speed to car
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text("Set speed to control the car:"),
-          TextField(
-            controller: speedController,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(labelText: "Speed"),
+          Text('Speed: ${_speed.toStringAsFixed(0)}'),
+          Slider(
+            value: _speed,
+            min: 0,
+            max: 100,
+            divisions: 20,
+            label: _speed.toStringAsFixed(0),
+            onChanged: (val) => setState(() => _speed = val),
           ),
-          SizedBox(height: 20),
-          ElevatedButton(onPressed: sendSpeed, child: Text("Drive")),
+          ElevatedButton(
+            onPressed: _sendSpeedToCar,
+            child: const Text('Drive'),
+          ),
         ],
       ),
     );
