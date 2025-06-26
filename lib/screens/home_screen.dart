@@ -1,12 +1,16 @@
-import 'package:auto_car/screens/control_options_screen.dart';
-import 'package:auto_car/screens/manual_control_screen.dart';
-import 'package:auto_car/screens/settings_screen.dart';
-import 'package:auto_car/screens/status_view_screen.dart';
-import 'package:auto_car/screens/wifi_scanner_screen.dart';
 import 'package:flutter/material.dart';
 
+import 'control_options_screen.dart';
+import 'manual_control_screen.dart';
+import 'settings_screen.dart';
+import 'status_view_screen.dart';
+import 'wifi_scanner_screen.dart';
+
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final Function(bool)? onThemeChanged;
+  final Function(String)? onLanguageChanged;
+
+  const HomeScreen({super.key, this.onThemeChanged, this.onLanguageChanged});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();

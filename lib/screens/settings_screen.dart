@@ -1,7 +1,36 @@
 import 'package:flutter/material.dart';
 
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
+import '../core/language.dart';
+import '../core/shared_prefs.dart';
+
+class SettingsScreen extends StatefulWidget {
+  final Function(bool)? onThemeChanged;
+  final Function(String)? onLanguageChanged;
+
+  const SettingsScreen({
+    super.key,
+    this.onThemeChanged,
+    this.onLanguageChanged,
+  });
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  bool isDarkMode = false;
+  String languageCode = 'en';
+
+  @override
+  void initState() {
+    super.initState();
+    SharedPrefs.getThemeMode().then(
+      (value) => setState(() => isDarkMode = value),
+    );
+    SharedPrefs.getLanguageCode().then(
+      (value) => setState(() => languageCode = value),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -9,18 +38,30 @@ class SettingsScreen extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       children: [
         SwitchListTile(
-          title: Text("Dark Mode"),
-          value: Theme.of(context).brightness == Brightness.dark,
+          title: Text(SimpleLocalization.getText('darkMode', languageCode)),
+          value: isDarkMode,
           onChanged: (value) {
-            // handle dark mode switch
+            setState(() => isDarkMode = value);
+            SharedPrefs.setThemeMode(value);
+            widget.onThemeChanged?.call(value);
           },
         ),
+        const SizedBox(height: 20),
         ListTile(
-          title: Text("Language"),
-          subtitle: Text("English / Arabic"),
+          title: Text(SimpleLocalization.getText('language', languageCode)),
+          subtitle: Text(
+            SimpleLocalization.getText(
+              languageCode == 'en' ? 'english' : 'arabic',
+              languageCode,
+            ),
+          ),
           onTap: () {
-            // change language
+            String newCode = languageCode == 'en' ? 'ar' : 'en';
+            setState(() => languageCode = newCode);
+            SharedPrefs.setLanguageCode(newCode);
+            widget.onLanguageChanged?.call(newCode);
           },
+          trailing: Icon(Icons.language),
         ),
       ],
     );
