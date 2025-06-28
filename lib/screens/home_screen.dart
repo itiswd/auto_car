@@ -1,10 +1,10 @@
+import 'package:auto_car/screens/bluetooth_scanner_screen.dart';
 import 'package:flutter/material.dart';
 
 import 'control_options_screen.dart';
 import 'manual_control_screen.dart';
 import 'settings_screen.dart';
 import 'status_view_screen.dart';
-import 'wifi_scanner_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,7 +17,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
-    const WifiScannerScreen(),
+    const BluetoothScannerScreen(),
     const ControlOptionsScreen(),
     const ManualControlScreen(),
     const StatusViewScreen(),
@@ -25,7 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   final List<String> _titles = [
-    'Wi-Fi Scanner',
+    'Bluetooth Scanner',
     'Control Options',
     'Manual Control',
     'Status View',

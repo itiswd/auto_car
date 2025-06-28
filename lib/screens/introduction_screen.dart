@@ -1,16 +1,17 @@
+import 'package:auto_car/screens/bluetooth_scanner_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../core/shared_prefs.dart';
-import 'home_screen.dart';
 
 class IntroScreen extends StatelessWidget {
   const IntroScreen({super.key});
 
   void _completeIntro(BuildContext context) async {
     await SharedPrefs.setIntroSeen();
-    Navigator.of(
+    Navigator.push(
       context,
-    ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+      MaterialPageRoute(builder: (_) => const BluetoothScannerScreen()),
+    );
   }
 
   @override
