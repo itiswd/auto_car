@@ -1,3 +1,4 @@
+import 'package:auto_car/screens/home_screen.dart';
 import 'package:auto_car/screens/introduction_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -50,7 +51,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const IntroScreen(),
+      home: hasSeenIntro ? const HomeScreen() : const IntroScreen(),
     );
   }
 }

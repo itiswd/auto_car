@@ -39,6 +39,7 @@ dependencies:
   shared_preferences: ^2.5.3
   network_info_plus: ^6.1.4
   flutter_bloc: ^9.1.1
+  flutter_bluetooth_serial: ^0.4.0
 
 dev_dependencies:
   flutter_test:
