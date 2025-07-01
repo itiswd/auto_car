@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+import '../core/shared_prefs.dart';
 
 class ManualControlScreen extends StatefulWidget {
   const ManualControlScreen({super.key});
@@ -15,14 +16,12 @@ class _ManualControlScreenState extends State<ManualControlScreen> {
   Future<void> _sendSpeedToCar() async {
     setState(() => _isSending = true);
 
-    // 👇 هنا تبعت الأمر للSTM، مثلاً عبر البلوتوث
     final command = _speed.toInt().toString();
     print("Sending: $command");
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('last_command', command);
+    await SharedPrefs.saveLastCommand(command);
 
-    await Future.delayed(const Duration(milliseconds: 500)); // simulate send
+    await Future.delayed(const Duration(milliseconds: 500));
     setState(() => _isSending = false);
 
     ScaffoldMessenger.of(
@@ -32,8 +31,6 @@ class _ManualControlScreenState extends State<ManualControlScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -41,25 +38,21 @@ class _ManualControlScreenState extends State<ManualControlScreen> {
         children: [
           Text(
             'Set Car Speed',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
-
-          // سرعة السيارة
           Center(
             child: Text(
               '${_speed.toInt()} km/h',
-              style: theme.textTheme.displaySmall?.copyWith(
-                color: Colors.indigo,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.displaySmall?.copyWith(color: Colors.indigo),
             ),
           ),
           const SizedBox(height: 16),
-
-          // السلايدر
           Slider(
             value: _speed,
             min: 0,
@@ -68,10 +61,7 @@ class _ManualControlScreenState extends State<ManualControlScreen> {
             label: '${_speed.toInt()} km/h',
             onChanged: (value) => setState(() => _speed = value),
           ),
-
           const SizedBox(height: 40),
-
-          // زر الإرسال
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),

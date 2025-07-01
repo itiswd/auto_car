@@ -1,5 +1,3 @@
-// lib/screens/status_view_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -11,8 +9,10 @@ class StatusViewScreen extends StatefulWidget {
 }
 
 class _StatusViewScreenState extends State<StatusViewScreen> {
-  String? _deviceName;
-  String? _deviceAddress;
+  String? _currentDeviceName;
+  String? _currentDeviceAddress;
+  String? _lastDeviceName;
+  String? _lastDeviceAddress;
   String? _lastCommand;
   bool _isConnected = false;
 
@@ -25,42 +25,67 @@ class _StatusViewScreenState extends State<StatusViewScreen> {
   Future<void> _loadStatus() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _deviceName = prefs.getString('last_device_name');
-      _deviceAddress = prefs.getString('last_device_address');
+      _currentDeviceName = prefs.getString('current_device_name');
+      _currentDeviceAddress = prefs.getString('current_device_address');
+      _lastDeviceName = prefs.getString('last_device_name');
+      _lastDeviceAddress = prefs.getString('last_device_address');
       _lastCommand = prefs.getString('last_command');
       _isConnected = prefs.getBool('is_connected') ?? false;
     });
   }
 
+  Widget _statusCard(String title, String value, IconData icon, Color color) {
+    return Card(
+      elevation: 4,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: ListTile(
+        leading: Icon(icon, color: color, size: 28),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(value, style: const TextStyle(fontSize: 16)),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Status View')),
+      appBar: AppBar(title: const Text("Status View")),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
+        child: ListView(
           children: [
             _statusCard(
-              "Device Name",
-              _deviceName ?? "Not Connected",
-              Icons.bluetooth,
+              "Current Connected Device",
+              _isConnected
+                  ? (_currentDeviceName ?? "Unknown")
+                  : "Not Connected",
+              Icons.bluetooth_connected,
               Colors.indigo,
             ),
-            const SizedBox(height: 12),
             _statusCard(
-              "Device Address",
-              _deviceAddress ?? "-",
-              Icons.qr_code,
+              "Current Device Address",
+              _isConnected ? (_currentDeviceAddress ?? "-") : "-",
+              Icons.qr_code_2,
               Colors.grey,
             ),
-            const SizedBox(height: 12),
+            _statusCard(
+              "Last Connected Device",
+              _lastDeviceName ?? "None",
+              Icons.history,
+              Colors.teal,
+            ),
+            _statusCard(
+              "Last Device Address",
+              _lastDeviceAddress ?? "-",
+              Icons.devices_other,
+              Colors.grey,
+            ),
             _statusCard(
               "Connection Status",
               _isConnected ? "Connected ✅" : "Disconnected ❌",
               _isConnected ? Icons.check_circle : Icons.cancel,
               _isConnected ? Colors.green : Colors.red,
             ),
-            const SizedBox(height: 12),
             _statusCard(
               "Last Command Sent",
               _lastCommand ?? "None",
@@ -69,18 +94,6 @@ class _StatusViewScreenState extends State<StatusViewScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _statusCard(String title, String value, IconData icon, Color color) {
-    return Card(
-      elevation: 5,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        leading: Icon(icon, size: 36, color: color),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(value, style: const TextStyle(fontSize: 16)),
       ),
     );
   }

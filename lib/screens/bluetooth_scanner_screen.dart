@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+import '../core/shared_prefs.dart';
 
 class BluetoothScreen extends StatefulWidget {
   const BluetoothScreen({super.key});
@@ -32,7 +33,6 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
   }
 
   void _startScan() async {
-    // نتأكد الأول إن البلوتوث شغال
     final adapterState = await FlutterBluePlus.adapterState.first;
     if (adapterState != BluetoothAdapterState.on) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -41,7 +41,6 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
       return;
     }
 
-    // نبدأ البحث
     await FlutterBluePlus.startScan(
       timeout: const Duration(seconds: 6),
       androidUsesFineLocation: true,
@@ -65,10 +64,10 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
       await device.connect();
       setState(() => _connectedDevice = device);
 
-      // حفظ آخر جهاز
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('last_device_name', device.platformName);
-      await prefs.setString('last_device_address', device.remoteId.str);
+      await SharedPrefs.saveCurrentDevice(
+        device.platformName,
+        device.remoteId.str,
+      );
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Connected to ${device.platformName}")),
@@ -130,6 +129,7 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
                         onPressed: () async {
                           await _connectedDevice?.disconnect();
                           setState(() => _connectedDevice = null);
+                          await SharedPrefs.clearCurrentDevice();
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text("Disconnected")),
                           );
