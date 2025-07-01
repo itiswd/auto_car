@@ -1,3 +1,5 @@
+// lib/screens/status_view_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -9,59 +11,77 @@ class StatusViewScreen extends StatefulWidget {
 }
 
 class _StatusViewScreenState extends State<StatusViewScreen> {
-  String? lastDeviceName;
-  String? lastDeviceId;
+  String? _deviceName;
+  String? _deviceAddress;
+  String? _lastCommand;
+  bool _isConnected = false;
 
   @override
   void initState() {
     super.initState();
-    _loadLastDevice();
+    _loadStatus();
   }
 
-  Future<void> _loadLastDevice() async {
+  Future<void> _loadStatus() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      lastDeviceName = prefs.getString("last_device_name") ?? "Unknown";
-      lastDeviceId = prefs.getString("last_device_id") ?? "N/A";
+      _deviceName = prefs.getString('last_device_name');
+      _deviceAddress = prefs.getString('last_device_address');
+      _lastCommand = prefs.getString('last_command');
+      _isConnected = prefs.getBool('is_connected') ?? false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16.0),
-      children: [
-        const Text(
-          'Connection Status',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+    return Scaffold(
+      appBar: AppBar(title: const Text('Status View')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            _statusCard(
+              "Device Name",
+              _deviceName ?? "Not Connected",
+              Icons.bluetooth,
+              Colors.indigo,
+            ),
+            const SizedBox(height: 12),
+            _statusCard(
+              "Device Address",
+              _deviceAddress ?? "-",
+              Icons.qr_code,
+              Colors.grey,
+            ),
+            const SizedBox(height: 12),
+            _statusCard(
+              "Connection Status",
+              _isConnected ? "Connected ✅" : "Disconnected ❌",
+              _isConnected ? Icons.check_circle : Icons.cancel,
+              _isConnected ? Colors.green : Colors.red,
+            ),
+            const SizedBox(height: 12),
+            _statusCard(
+              "Last Command Sent",
+              _lastCommand ?? "None",
+              Icons.send,
+              Colors.blueGrey,
+            ),
+          ],
         ),
-        const SizedBox(height: 16),
+      ),
+    );
+  }
 
-        Card(
-          child: ListTile(
-            leading: const Icon(Icons.device_hub),
-            title: const Text('Last Connected Device'),
-            subtitle: Text('Name: $lastDeviceName\nID: $lastDeviceId'),
-          ),
-        ),
-
-        const SizedBox(height: 8),
-        Card(
-          child: ListTile(
-            leading: const Icon(Icons.network_wifi),
-            title: const Text('RSSI: -60 dBm'),
-            subtitle: const Text('Distance: ~5m'),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Card(
-          child: ListTile(
-            leading: const Icon(Icons.speed),
-            title: const Text('Last Recorded Speed'),
-            subtitle: const Text('40 km/h'),
-          ),
-        ),
-      ],
+  Widget _statusCard(String title, String value, IconData icon, Color color) {
+    return Card(
+      elevation: 5,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: Icon(icon, size: 36, color: color),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(value, style: const TextStyle(fontSize: 16)),
+      ),
     );
   }
 }

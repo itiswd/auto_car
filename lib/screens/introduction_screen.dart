@@ -10,7 +10,7 @@ class IntroScreen extends StatelessWidget {
     await SharedPrefs.setIntroSeen();
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const BluetoothScannerScreen()),
+      MaterialPageRoute(builder: (_) => const BluetoothScreen()),
     );
   }
 
