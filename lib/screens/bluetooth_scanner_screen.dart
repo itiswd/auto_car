@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'dart:ui';
 
-import '../core/shared_prefs.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class BluetoothScreen extends StatefulWidget {
   const BluetoothScreen({super.key});
@@ -10,68 +11,74 @@ class BluetoothScreen extends StatefulWidget {
   State<BluetoothScreen> createState() => _BluetoothScreenState();
 }
 
-class _BluetoothScreenState extends State<BluetoothScreen> {
+class _BluetoothScreenState extends State<BluetoothScreen>
+    with TickerProviderStateMixin {
+  BluetoothState _bluetoothState = BluetoothState.UNKNOWN;
   BluetoothDevice? _connectedDevice;
+  bool _isScanning = false;
+  final List<BluetoothDiscoveryResult> _devicesList = [];
+
+  late AnimationController _fadeController;
 
   @override
   void initState() {
     super.initState();
-    _checkBluetoothState();
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _initBluetooth();
   }
 
-  void _checkBluetoothState() {
-    FlutterBluePlus.adapterState.listen((state) {
-      if (state != BluetoothAdapterState.on) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Please turn on Bluetooth"),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-    });
-  }
-
-  void _startScan() async {
-    final adapterState = await FlutterBluePlus.adapterState.first;
-    if (adapterState != BluetoothAdapterState.on) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please turn on Bluetooth first")),
-      );
-      return;
+  Future<void> _initBluetooth() async {
+    _bluetoothState = await FlutterBluetoothSerial.instance.state;
+    if (_bluetoothState != BluetoothState.STATE_ON) {
+      await FlutterBluetoothSerial.instance.requestEnable();
     }
 
-    await FlutterBluePlus.startScan(
-      timeout: const Duration(seconds: 6),
-      androidUsesFineLocation: true,
-    );
+    FlutterBluetoothSerial.instance.onStateChanged().listen((state) {
+      setState(() => _bluetoothState = state);
+    });
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("Scanning for devices...")));
+    // _startScan();
+  }
+
+  void _startScan() {
+    _devicesList.clear();
+    setState(() => _isScanning = true);
+
+    FlutterBluetoothSerial.instance
+        .startDiscovery()
+        .listen((r) {
+          final existingIndex = _devicesList.indexWhere(
+            (element) => element.device.address == r.device.address,
+          );
+          if (existingIndex >= 0) {
+            _devicesList[existingIndex] = r;
+          } else {
+            _devicesList.add(r);
+          }
+
+          setState(() {});
+        })
+        .onDone(() {
+          setState(() => _isScanning = false);
+          _fadeController.forward(from: 0);
+        });
   }
 
   Future<void> _connectToDevice(BluetoothDevice device) async {
     try {
-      if (_connectedDevice != null &&
-          _connectedDevice!.remoteId == device.remoteId) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Already connected to this device")),
-        );
-        return;
-      }
-
-      await device.connect();
+      // final connection = await BluetoothConnection.toAddress(device.address);
       setState(() => _connectedDevice = device);
 
-      await SharedPrefs.saveCurrentDevice(
-        device.platformName,
-        device.remoteId.str,
-      );
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString("last_device_name", device.name ?? "Unknown");
+      await prefs.setString("last_device_address", device.address);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Connected to ${device.platformName}")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Connected to ${device.name}")));
     } catch (e) {
       ScaffoldMessenger.of(
         context,
@@ -79,22 +86,23 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
     }
   }
 
-  Widget _buildDeviceTile(ScanResult result) {
-    final device = result.device;
-    final name =
-        device.platformName.isNotEmpty ? device.platformName : 'Unknown';
+  Future<void> _disconnect() async {
+    setState(() => _connectedDevice = null);
+  }
 
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        leading: const Icon(Icons.bluetooth, color: Colors.indigo),
-        title: Text(name),
-        subtitle: Text(device.remoteId.str),
-        trailing: ElevatedButton(
-          onPressed: () => _connectToDevice(device),
-          child: const Text('Connect'),
+  Widget _glassCard({required Widget child}) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: Colors.white.withOpacity(0.15),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: child,
         ),
       ),
     );
@@ -103,51 +111,88 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Bluetooth Devices")),
-      body: StreamBuilder<List<ScanResult>>(
-        stream: FlutterBluePlus.scanResults,
-        builder: (context, snapshot) {
-          final devices = snapshot.data ?? [];
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: const Text("Bluetooth Devices"),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF0f2027), Color(0xFF203a43), Color(0xFF2c5364)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: ListView(
+          padding: const EdgeInsets.only(top: 100, bottom: 100),
+          children: [
+            if (_connectedDevice != null)
+              _glassCard(
+                child: ListTile(
+                  leading: const Icon(
+                    Icons.bluetooth_connected,
+                    color: Colors.green,
+                  ),
+                  title: const Text(
+                    "Connected To",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  subtitle: Text(
+                    _connectedDevice!.name ?? "Unknown",
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.cancel, color: Colors.redAccent),
+                    onPressed: _disconnect,
+                  ),
+                ),
+              ),
+            ..._devicesList.map((result) {
+              final device = result.device;
+              final name = device.name ?? "Unknown";
 
-          return ListView(
-            padding: const EdgeInsets.only(top: 12),
-            children: [
-              if (_connectedDevice != null)
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Card(
-                    color: Colors.green[100],
-                    child: ListTile(
-                      title: const Text("Connected To"),
-                      subtitle: Text(_connectedDevice!.platformName),
-                      leading: const Icon(
-                        Icons.check_circle,
-                        color: Colors.green,
+              return FadeTransition(
+                opacity: _fadeController,
+                child: _glassCard(
+                  child: ListTile(
+                    leading: const Icon(Icons.bluetooth, color: Colors.white),
+                    title: Text(
+                      name,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    subtitle: Text(
+                      device.address,
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                    trailing: ElevatedButton(
+                      onPressed: () => _connectToDevice(device),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueAccent,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.cancel, color: Colors.red),
-                        onPressed: () async {
-                          await _connectedDevice?.disconnect();
-                          setState(() => _connectedDevice = null);
-                          await SharedPrefs.clearCurrentDevice();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Disconnected")),
-                          );
-                        },
-                      ),
+                      child: const Text("Connect"),
                     ),
                   ),
                 ),
-              ...devices.map(_buildDeviceTile),
-              const SizedBox(height: 100),
-            ],
-          );
-        },
+              );
+            }),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _startScan,
-        label: const Text("Scan"),
-        icon: const Icon(Icons.search),
+        onPressed: _isScanning ? null : _startScan,
+        backgroundColor: _isScanning ? Colors.grey.shade800 : Colors.tealAccent,
+        foregroundColor: _isScanning ? Colors.white : Colors.black,
+        icon: const Icon(Icons.wifi_tethering),
+        label: Text(
+          _isScanning ? "Scanning..." : "Start Scan",
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }

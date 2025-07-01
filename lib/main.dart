@@ -1,6 +1,4 @@
-import 'package:auto_car/screens/bluetooth_scanner_screen.dart';
-import 'package:auto_car/screens/manual_control_screen.dart';
-import 'package:auto_car/screens/status_view_screen.dart';
+import 'package:auto_car/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -14,51 +12,46 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Auto Car Controller',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
-        useMaterial3: true,
-      ),
       debugShowCheckedModeBanner: false,
-      home: const HomeWithNav(),
-    );
-  }
-}
-
-class HomeWithNav extends StatefulWidget {
-  const HomeWithNav({super.key});
-
-  @override
-  State<HomeWithNav> createState() => _HomeWithNavState();
-}
-
-class _HomeWithNavState extends State<HomeWithNav> {
-  int _currentIndex = 0;
-
-  final List<Widget> _screens = const [
-    BluetoothScreen(),
-    ManualControlScreen(),
-    StatusViewScreen(),
-  ];
-
-  final List<String> _titles = const ["Bluetooth", "Manual Control", "Status"];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(_titles[_currentIndex])),
-      body: _screens[_currentIndex],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) => setState(() => _currentIndex = index),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.bluetooth),
-            label: "Bluetooth",
+      theme: ThemeData(
+        useMaterial3: true,
+        fontFamily: 'Cairo',
+        scaffoldBackgroundColor: const Color(0xFF0F0F0F),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.indigo,
+          brightness: Brightness.dark,
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: true,
+          titleTextStyle: TextStyle(
+            fontFamily: 'Cairo',
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
           ),
-          NavigationDestination(icon: Icon(Icons.gamepad), label: "Control"),
-          NavigationDestination(icon: Icon(Icons.info), label: "Status"),
-        ],
+          iconTheme: IconThemeData(color: Colors.white),
+        ),
+        navigationBarTheme: NavigationBarThemeData(
+          height: 70,
+          backgroundColor: Colors.black,
+          indicatorColor: Colors.indigo.withOpacity(0.25),
+          labelTextStyle: WidgetStateProperty.all(
+            const TextStyle(
+              fontFamily: 'Cairo',
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          iconTheme: WidgetStateProperty.all(
+            const IconThemeData(color: Colors.white),
+          ),
+          surfaceTintColor: Colors.transparent,
+        ),
       ),
+      home: const SplashScreen(),
     );
   }
 }
