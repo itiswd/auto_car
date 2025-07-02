@@ -1,9 +1,8 @@
-import 'dart:typed_data';
-import 'dart:ui';
-
-import 'package:auto_car/core/shared_prefs.dart';
+import 'package:auto_car/services/bluetooth_service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+
+import '../widgets/control_button.dart';
+import '../widgets/glass_card.dart';
 
 class ManualControlScreen extends StatefulWidget {
   const ManualControlScreen({super.key});
@@ -14,7 +13,6 @@ class ManualControlScreen extends StatefulWidget {
 
 class _ManualControlScreenState extends State<ManualControlScreen>
     with TickerProviderStateMixin {
-  BluetoothConnection? _connection;
   double _speed = 50;
   late AnimationController _fadeController;
 
@@ -25,96 +23,31 @@ class _ManualControlScreenState extends State<ManualControlScreen>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
-    _initConnection();
+    _initBluetooth();
   }
 
-  Future<void> _initConnection() async {
-    final address = await SharedPrefs.getCurrentDeviceAddress();
-    if (address != null) {
-      _connection = await BluetoothConnection.toAddress(address);
-      setState(() {});
-    }
+  Future<void> _initBluetooth() async {
+    await BluetoothService().connect();
     _fadeController.forward();
   }
 
-  void _sendCommand(String command) {
-    if (_connection != null && _connection!.isConnected) {
-      _connection!.output.add(Uint8List.fromList(command.codeUnits));
+  void _sendCommand(String command) async {
+    try {
+      await BluetoothService().send(command);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Sent: $command")));
-    } else {
+      ).showSnackBar(SnackBar(content: Text("✅ Sent: $command")));
+    } catch (_) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Not connected")));
+      ).showSnackBar(const SnackBar(content: Text("❌ Not connected")));
     }
-  }
-
-  Widget _buildControlButton(
-    IconData icon,
-    String cmd,
-    String label, {
-    Color color = Colors.teal,
-  }) {
-    return GestureDetector(
-      onTap: () => _sendCommand(cmd),
-      child: Column(
-        children: [
-          Container(
-            width: 70,
-            height: 70,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: color.withOpacity(0.15),
-              border: Border.all(color: Colors.white.withOpacity(0.2)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.4),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Center(child: Icon(icon, color: Colors.white, size: 30)),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _glassCard({required Widget child}) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        color: Colors.white.withOpacity(0.12),
-        border: Border.all(color: Colors.white.withOpacity(0.15)),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Padding(padding: const EdgeInsets.all(16.0), child: child),
-        ),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        width: double.infinity,
-        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xFF0f2027), Color(0xFF203a43), Color(0xFF2c5364)],
@@ -127,10 +60,9 @@ class _ManualControlScreenState extends State<ManualControlScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _glassCard(
+              GlassCard(
                 child: Column(
                   children: [
-                    // Title
                     const Text(
                       "Control Panel",
                       style: TextStyle(
@@ -140,63 +72,72 @@ class _ManualControlScreenState extends State<ManualControlScreen>
                       ),
                     ),
                     const SizedBox(height: 20),
-                    // Gamepad layout
                     Column(
                       children: [
-                        _buildControlButton(Icons.arrow_upward, "F", "Forward"),
+                        ControlButton(
+                          icon: Icons.arrow_upward,
+                          label: "Forward",
+                          onTap: () => _sendCommand("F"),
+                        ),
                         const SizedBox(height: 16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _buildControlButton(Icons.arrow_back, "L", "Left"),
-                            const SizedBox(width: 24),
-                            _buildControlButton(
-                              Icons.stop_circle_outlined,
-                              "S",
-                              "Stop",
-                              color: Colors.redAccent,
+                            ControlButton(
+                              icon: Icons.arrow_back,
+                              label: "Left",
+                              onTap: () => _sendCommand("L"),
                             ),
                             const SizedBox(width: 24),
-                            _buildControlButton(
-                              Icons.arrow_forward,
-                              "R",
-                              "Right",
+                            ControlButton(
+                              icon: Icons.stop_circle_outlined,
+                              label: "Stop",
+                              color: Colors.redAccent,
+                              onTap: () => _sendCommand("S"),
+                            ),
+                            const SizedBox(width: 24),
+                            ControlButton(
+                              icon: Icons.arrow_forward,
+                              label: "Right",
+                              onTap: () => _sendCommand("R"),
                             ),
                           ],
                         ),
                         const SizedBox(height: 16),
-                        _buildControlButton(
-                          Icons.arrow_downward,
-                          "B",
-                          "Backward",
+                        ControlButton(
+                          icon: Icons.arrow_downward,
+                          label: "Backward",
+                          onTap: () => _sendCommand("B"),
                         ),
                       ],
                     ),
                     const SizedBox(height: 20),
-                    // Extra commands
                     Wrap(
-                      alignment: WrapAlignment.center,
                       spacing: 12,
                       runSpacing: 12,
+                      alignment: WrapAlignment.center,
                       children: [
-                        _buildControlButton(Icons.shield, "O", "Obstacle"),
-                        _buildControlButton(
-                          Icons.remove_red_eye,
-                          "D",
-                          "Blind Spot",
+                        ControlButton(
+                          icon: Icons.shield,
+                          label: "Obstacle",
+                          onTap: () => _sendCommand("O"),
                         ),
-                        _buildControlButton(
-                          Icons.local_parking,
-                          "P",
-                          "Auto Park",
+                        ControlButton(
+                          icon: Icons.remove_red_eye,
+                          label: "Blind Spot",
+                          onTap: () => _sendCommand("D"),
+                        ),
+                        ControlButton(
+                          icon: Icons.local_parking,
+                          label: "Auto Park",
+                          onTap: () => _sendCommand("P"),
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-              // Speed control card
-              _glassCard(
+              GlassCard(
                 child: Column(
                   children: [
                     Text(
@@ -218,10 +159,7 @@ class _ManualControlScreenState extends State<ManualControlScreen>
                     ElevatedButton.icon(
                       onPressed: () => _sendCommand(_speed.toInt().toString()),
                       icon: const Icon(Icons.speed),
-                      label: const Text(
-                        "Send Speed",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                      label: const Text("Send Speed"),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.teal,
                         foregroundColor: Colors.white,
