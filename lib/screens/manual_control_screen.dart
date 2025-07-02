@@ -52,27 +52,41 @@ class _ManualControlScreenState extends State<ManualControlScreen>
 
   Widget _buildControlButton(
     IconData icon,
-    String cmd, {
+    String cmd,
+    String label, {
     Color color = Colors.teal,
   }) {
     return GestureDetector(
       onTap: () => _sendCommand(cmd),
-      child: Container(
-        width: 70,
-        height: 70,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: color.withOpacity(0.15),
-          border: Border.all(color: Colors.white.withOpacity(0.2)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.4),
-              blurRadius: 6,
-              offset: const Offset(0, 3),
+      child: Column(
+        children: [
+          Container(
+            width: 70,
+            height: 70,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color.withOpacity(0.15),
+              border: Border.all(color: Colors.white.withOpacity(0.2)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.4),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Center(child: Icon(icon, color: Colors.white, size: 30)),
+            child: Center(child: Icon(icon, color: Colors.white, size: 30)),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -98,14 +112,9 @@ class _ManualControlScreenState extends State<ManualControlScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: const Text("Manual Control"),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
       body: Container(
         width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xFF0f2027), Color(0xFF203a43), Color(0xFF2c5364)],
@@ -121,6 +130,7 @@ class _ManualControlScreenState extends State<ManualControlScreen>
               _glassCard(
                 child: Column(
                   children: [
+                    // Title
                     const Text(
                       "Control Panel",
                       style: TextStyle(
@@ -130,33 +140,62 @@ class _ManualControlScreenState extends State<ManualControlScreen>
                       ),
                     ),
                     const SizedBox(height: 20),
-                    // Layout gamepad style
+                    // Gamepad layout
                     Column(
                       children: [
-                        _buildControlButton(Icons.arrow_upward, "F"),
+                        _buildControlButton(Icons.arrow_upward, "F", "Forward"),
                         const SizedBox(height: 16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _buildControlButton(Icons.arrow_back, "L"),
-                            const SizedBox(width: 16),
+                            _buildControlButton(Icons.arrow_back, "L", "Left"),
+                            const SizedBox(width: 24),
                             _buildControlButton(
                               Icons.stop_circle_outlined,
                               "S",
+                              "Stop",
                               color: Colors.redAccent,
                             ),
-                            const SizedBox(width: 16),
-                            _buildControlButton(Icons.arrow_forward, "R"),
+                            const SizedBox(width: 24),
+                            _buildControlButton(
+                              Icons.arrow_forward,
+                              "R",
+                              "Right",
+                            ),
                           ],
                         ),
                         const SizedBox(height: 16),
-                        _buildControlButton(Icons.arrow_downward, "B"),
-                        const SizedBox(height: 16),
+                        _buildControlButton(
+                          Icons.arrow_downward,
+                          "B",
+                          "Backward",
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    // Extra commands
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        _buildControlButton(Icons.shield, "O", "Obstacle"),
+                        _buildControlButton(
+                          Icons.remove_red_eye,
+                          "D",
+                          "Blind Spot",
+                        ),
+                        _buildControlButton(
+                          Icons.local_parking,
+                          "P",
+                          "Auto Park",
+                        ),
                       ],
                     ),
                   ],
                 ),
               ),
+              // Speed control card
               _glassCard(
                 child: Column(
                   children: [
@@ -179,7 +218,10 @@ class _ManualControlScreenState extends State<ManualControlScreen>
                     ElevatedButton.icon(
                       onPressed: () => _sendCommand(_speed.toInt().toString()),
                       icon: const Icon(Icons.speed),
-                      label: const Text("Send Speed"),
+                      label: const Text(
+                        "Send Speed",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.teal,
                         foregroundColor: Colors.white,
