@@ -1,94 +1,12 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 
-class BluetoothScreen extends StatefulWidget {
+import '../providers/bluetooth_provider.dart';
+
+class BluetoothScreen extends StatelessWidget {
   const BluetoothScreen({super.key});
-
-  @override
-  State<BluetoothScreen> createState() => _BluetoothScreenState();
-}
-
-class _BluetoothScreenState extends State<BluetoothScreen>
-    with TickerProviderStateMixin {
-  BluetoothState _bluetoothState = BluetoothState.UNKNOWN;
-  BluetoothDevice? _connectedDevice;
-  bool _isScanning = false;
-  final List<BluetoothDiscoveryResult> _devicesList = [];
-
-  late AnimationController _fadeController;
-
-  @override
-  void initState() {
-    super.initState();
-    _fadeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-    _initBluetooth();
-  }
-
-  Future<void> _initBluetooth() async {
-    _bluetoothState = await FlutterBluetoothSerial.instance.state;
-    if (_bluetoothState != BluetoothState.STATE_ON) {
-      await FlutterBluetoothSerial.instance.requestEnable();
-    }
-
-    FlutterBluetoothSerial.instance.onStateChanged().listen((state) {
-      setState(() => _bluetoothState = state);
-    });
-
-    // _startScan();
-  }
-
-  void _startScan() {
-    _devicesList.clear();
-    setState(() => _isScanning = true);
-
-    FlutterBluetoothSerial.instance
-        .startDiscovery()
-        .listen((r) {
-          final existingIndex = _devicesList.indexWhere(
-            (element) => element.device.address == r.device.address,
-          );
-          if (existingIndex >= 0) {
-            _devicesList[existingIndex] = r;
-          } else {
-            _devicesList.add(r);
-          }
-
-          setState(() {});
-        })
-        .onDone(() {
-          setState(() => _isScanning = false);
-          _fadeController.forward(from: 0);
-        });
-  }
-
-  Future<void> _connectToDevice(BluetoothDevice device) async {
-    try {
-      // final connection = await BluetoothConnection.toAddress(device.address);
-      setState(() => _connectedDevice = device);
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString("last_device_name", device.name ?? "Unknown");
-      await prefs.setString("last_device_address", device.address);
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Connected to ${device.name}")));
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Connection failed: $e")));
-    }
-  }
-
-  Future<void> _disconnect() async {
-    setState(() => _connectedDevice = null);
-  }
 
   Widget _glassCard({required Widget child}) {
     return Container(
@@ -110,6 +28,8 @@ class _BluetoothScreenState extends State<BluetoothScreen>
 
   @override
   Widget build(BuildContext context) {
+    final bluetooth = Provider.of<BluetoothProvider>(context);
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -128,7 +48,7 @@ class _BluetoothScreenState extends State<BluetoothScreen>
         child: ListView(
           padding: const EdgeInsets.only(top: 100, bottom: 100),
           children: [
-            if (_connectedDevice != null)
+            if (bluetooth.connectedDevice != null)
               _glassCard(
                 child: ListTile(
                   leading: const Icon(
@@ -140,43 +60,39 @@ class _BluetoothScreenState extends State<BluetoothScreen>
                     style: TextStyle(color: Colors.white),
                   ),
                   subtitle: Text(
-                    _connectedDevice!.name ?? "Unknown",
+                    bluetooth.connectedDevice!.name ?? "Unknown",
                     style: const TextStyle(color: Colors.white70),
                   ),
                   trailing: IconButton(
                     icon: const Icon(Icons.cancel, color: Colors.redAccent),
-                    onPressed: _disconnect,
+                    onPressed: bluetooth.disconnect,
                   ),
                 ),
               ),
-            ..._devicesList.map((result) {
+            ...bluetooth.devices.map((result) {
               final device = result.device;
               final name = device.name ?? "Unknown";
-
-              return FadeTransition(
-                opacity: _fadeController,
-                child: _glassCard(
-                  child: ListTile(
-                    leading: const Icon(Icons.bluetooth, color: Colors.white),
-                    title: Text(
-                      name,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                    subtitle: Text(
-                      device.address,
-                      style: const TextStyle(color: Colors.white70),
-                    ),
-                    trailing: ElevatedButton(
-                      onPressed: () => _connectToDevice(device),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueAccent,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+              return _glassCard(
+                child: ListTile(
+                  leading: const Icon(Icons.bluetooth, color: Colors.white),
+                  title: Text(
+                    name,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  subtitle: Text(
+                    device.address,
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                  trailing: ElevatedButton(
+                    onPressed: () => bluetooth.connectToDevice(device),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Text("Connect"),
                     ),
+                    child: const Text("Connect"),
                   ),
                 ),
               );
@@ -185,12 +101,13 @@ class _BluetoothScreenState extends State<BluetoothScreen>
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _isScanning ? null : _startScan,
-        backgroundColor: _isScanning ? Colors.grey.shade800 : Colors.tealAccent,
-        foregroundColor: _isScanning ? Colors.white : Colors.black,
+        onPressed: bluetooth.isScanning ? null : bluetooth.startScan,
+        backgroundColor:
+            bluetooth.isScanning ? Colors.grey.shade800 : Colors.tealAccent,
+        foregroundColor: bluetooth.isScanning ? Colors.white : Colors.black,
         icon: const Icon(Icons.wifi_tethering),
         label: Text(
-          _isScanning ? "Scanning..." : "Start Scan",
+          bluetooth.isScanning ? "Scanning..." : "Start Scan",
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
       ),

@@ -1,6 +1,7 @@
-import 'package:auto_car/services/bluetooth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/bluetooth_provider.dart';
 import '../widgets/control_button.dart';
 import '../widgets/glass_card.dart';
 
@@ -23,17 +24,13 @@ class _ManualControlScreenState extends State<ManualControlScreen>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
-    _initBluetooth();
-  }
-
-  Future<void> _initBluetooth() async {
-    await BluetoothService().connect();
     _fadeController.forward();
   }
 
-  void _sendCommand(String command) async {
+  void _sendCommand(BuildContext context, String command) async {
+    final bluetooth = Provider.of<BluetoothProvider>(context, listen: false);
     try {
-      await BluetoothService().send(command);
+      await bluetooth.sendCommand(command);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("✅ Sent: $command")));
@@ -58,7 +55,7 @@ class _ManualControlScreenState extends State<ManualControlScreen>
         child: FadeTransition(
           opacity: _fadeController,
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
               GlassCard(
                 child: Column(
@@ -72,44 +69,40 @@ class _ManualControlScreenState extends State<ManualControlScreen>
                       ),
                     ),
                     const SizedBox(height: 20),
-                    Column(
+                    ControlButton(
+                      icon: Icons.arrow_upward,
+                      label: "Forward",
+                      onTap: () => _sendCommand(context, "F"),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         ControlButton(
-                          icon: Icons.arrow_upward,
-                          label: "Forward",
-                          onTap: () => _sendCommand("F"),
+                          icon: Icons.arrow_back,
+                          label: "Left",
+                          onTap: () => _sendCommand(context, "L"),
                         ),
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            ControlButton(
-                              icon: Icons.arrow_back,
-                              label: "Left",
-                              onTap: () => _sendCommand("L"),
-                            ),
-                            const SizedBox(width: 24),
-                            ControlButton(
-                              icon: Icons.stop_circle_outlined,
-                              label: "Stop",
-                              color: Colors.redAccent,
-                              onTap: () => _sendCommand("S"),
-                            ),
-                            const SizedBox(width: 24),
-                            ControlButton(
-                              icon: Icons.arrow_forward,
-                              label: "Right",
-                              onTap: () => _sendCommand("R"),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
+                        const SizedBox(width: 24),
                         ControlButton(
-                          icon: Icons.arrow_downward,
-                          label: "Backward",
-                          onTap: () => _sendCommand("B"),
+                          icon: Icons.stop_circle_outlined,
+                          label: "Stop",
+                          color: Colors.redAccent,
+                          onTap: () => _sendCommand(context, "S"),
+                        ),
+                        const SizedBox(width: 24),
+                        ControlButton(
+                          icon: Icons.arrow_forward,
+                          label: "Right",
+                          onTap: () => _sendCommand(context, "R"),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 16),
+                    ControlButton(
+                      icon: Icons.arrow_downward,
+                      label: "Backward",
+                      onTap: () => _sendCommand(context, "B"),
                     ),
                     const SizedBox(height: 20),
                     Wrap(
@@ -120,17 +113,17 @@ class _ManualControlScreenState extends State<ManualControlScreen>
                         ControlButton(
                           icon: Icons.shield,
                           label: "Obstacle",
-                          onTap: () => _sendCommand("O"),
+                          onTap: () => _sendCommand(context, "O"),
                         ),
                         ControlButton(
                           icon: Icons.remove_red_eye,
                           label: "Blind Spot",
-                          onTap: () => _sendCommand("D"),
+                          onTap: () => _sendCommand(context, "D"),
                         ),
                         ControlButton(
                           icon: Icons.local_parking,
                           label: "Auto Park",
-                          onTap: () => _sendCommand("P"),
+                          onTap: () => _sendCommand(context, "P"),
                         ),
                       ],
                     ),
@@ -157,7 +150,9 @@ class _ManualControlScreenState extends State<ManualControlScreen>
                     ),
                     const SizedBox(height: 10),
                     ElevatedButton.icon(
-                      onPressed: () => _sendCommand(_speed.toInt().toString()),
+                      onPressed:
+                          () =>
+                              _sendCommand(context, _speed.toInt().toString()),
                       icon: const Icon(Icons.speed),
                       label: const Text("Send Speed"),
                       style: ElevatedButton.styleFrom(

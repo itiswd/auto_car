@@ -1,7 +1,10 @@
 import 'dart:ui';
 
-import 'package:auto_car/core/shared_prefs.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../core/shared_prefs.dart';
+import '../providers/bluetooth_provider.dart';
 
 class StatusViewScreen extends StatefulWidget {
   const StatusViewScreen({super.key});
@@ -12,11 +15,7 @@ class StatusViewScreen extends StatefulWidget {
 
 class _StatusViewScreenState extends State<StatusViewScreen>
     with TickerProviderStateMixin {
-  String? _currentDeviceName;
-  String? _currentDeviceAddress;
   String? _lastCommand;
-  bool _isConnected = false;
-
   late AnimationController _fadeController;
 
   @override
@@ -26,23 +25,13 @@ class _StatusViewScreenState extends State<StatusViewScreen>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
-    _loadStatus();
+    _loadLastCommand();
+    _fadeController.forward(from: 0);
   }
 
-  Future<void> _loadStatus() async {
-    final isConnected = await SharedPrefs.isConnected();
-    final name = await SharedPrefs.getCurrentDeviceName();
-    final address = await SharedPrefs.getCurrentDeviceAddress();
-    final lastCmd = await SharedPrefs.getLastCommand();
-
-    setState(() {
-      _isConnected = isConnected;
-      _currentDeviceName = name;
-      _currentDeviceAddress = address;
-      _lastCommand = lastCmd;
-    });
-
-    _fadeController.forward(from: 0);
+  Future<void> _loadLastCommand() async {
+    final cmd = await SharedPrefs.getLastCommand();
+    setState(() => _lastCommand = cmd);
   }
 
   Widget _glassCard({required Widget child}) {
@@ -84,6 +73,9 @@ class _StatusViewScreenState extends State<StatusViewScreen>
 
   @override
   Widget build(BuildContext context) {
+    final bluetooth = Provider.of<BluetoothProvider>(context);
+    final device = bluetooth.connectedDevice;
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -100,7 +92,7 @@ class _StatusViewScreenState extends State<StatusViewScreen>
           ),
         ),
         child: RefreshIndicator(
-          onRefresh: _loadStatus,
+          onRefresh: _loadLastCommand,
           child: FadeTransition(
             opacity: _fadeController,
             child: ListView(
@@ -108,19 +100,19 @@ class _StatusViewScreenState extends State<StatusViewScreen>
               children: [
                 _statusItem(
                   "Connection Status",
-                  _isConnected ? "Connected ✅" : "Disconnected ❌",
-                  _isConnected ? Icons.check_circle : Icons.cancel,
-                  _isConnected ? Colors.green : Colors.red,
+                  bluetooth.isConnected ? "Connected ✅" : "Disconnected ❌",
+                  bluetooth.isConnected ? Icons.check_circle : Icons.cancel,
+                  bluetooth.isConnected ? Colors.green : Colors.red,
                 ),
                 _statusItem(
                   "Device Name",
-                  _currentDeviceName ?? "Not Connected",
+                  device?.name ?? "Not Connected",
                   Icons.devices,
                   Colors.blue,
                 ),
                 _statusItem(
                   "Device Address",
-                  _currentDeviceAddress ?? "-",
+                  device?.address ?? "-",
                   Icons.qr_code,
                   Colors.grey,
                 ),

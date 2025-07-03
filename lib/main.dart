@@ -1,57 +1,26 @@
-import 'package:auto_car/screens/splash_screen.dart';
+import 'package:auto_car/screens/home_with_nav.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'providers/bluetooth_provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => BluetoothProvider())],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Auto Car Controller',
+      theme: ThemeData.dark(),
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        fontFamily: 'Cairo',
-        scaffoldBackgroundColor: const Color(0xFF0F0F0F),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.indigo,
-          brightness: Brightness.dark,
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          centerTitle: true,
-          titleTextStyle: TextStyle(
-            fontFamily: 'Cairo',
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-          iconTheme: IconThemeData(color: Colors.white),
-        ),
-        navigationBarTheme: NavigationBarThemeData(
-          height: 70,
-          backgroundColor: Colors.black,
-          indicatorColor: Colors.indigo.withOpacity(0.25),
-          labelTextStyle: WidgetStateProperty.all(
-            const TextStyle(
-              fontFamily: 'Cairo',
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          iconTheme: WidgetStateProperty.all(
-            const IconThemeData(color: Colors.white),
-          ),
-          surfaceTintColor: Colors.transparent,
-        ),
-      ),
-      home: const SplashScreen(),
+      home: HomeWithNav(),
     );
   }
 }
